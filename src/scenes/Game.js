@@ -36,7 +36,9 @@ export default class Game extends Phaser.Scene
        //the first value in addTilesetImage must match the name of the tileset in the Tiled UI. 
        //its displayed in the right menu above the tile selection
        //NOT necessarily same as value above
-       const tileset = map.addTilesetImage('dungeon', 'tiles')
+       //IMPORTANT: add the 1,2 spacing and padding to work with tile-extruder
+    
+       const tileset = map.addTilesetImage('dungeon', 'tiles', 16, 16, 1, 2)
 
         //'Ground' / 'Walls' are the name of the layers containing the content we want
         //in the Tiled UI
