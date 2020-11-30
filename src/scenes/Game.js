@@ -1,19 +1,13 @@
 import Phaser from 'phaser'
-//import { isThrowStatement } from 'typescript'
+
+import { createLizardAnims } from '../anims/EnemyAnims'
+import { createCharacterAnims } from '../anims/CharacterAnims'
 
 import { debugDraw } from '../utils/debug'
+import Lizard from '../enemies/lizard'
 
 export default class Game extends Phaser.Scene
 {
-    //typescript
-    //private cursors!: Phaser.Types.Input.Keyboard.CursorKeys
-    //ES2019 JS private vars
-    //#cursors = Phaser.Type
-    //private cursor !: Phaser.Types.Input.Keyboard.CursorKeys
-    //faune
-
-
-
 	constructor()
 	{
         super('game')
@@ -30,65 +24,26 @@ export default class Game extends Phaser.Scene
 
     create()
     {
-        //this.add.image(0,0,'tiles')
-
        const map = this.make.tilemap({key: 'dungeon'})
        //the first value in addTilesetImage must match the name of the tileset in the Tiled UI. 
        //its displayed in the right menu above the tile selection
        //NOT necessarily same as value above
        //IMPORTANT: add the 1,2 spacing and padding to work with tile-extruder
-    
        const tileset = map.addTilesetImage('dungeon', 'tiles', 16, 16, 1, 2)
 
-        //'Ground' / 'Walls' are the name of the layers containing the content we want
-        //in the Tiled UI
+       //'Ground' / 'Walls' are the name of the layers containing the content we want
+       //in the Tiled UI
        map.createStaticLayer('Ground', tileset)
        const wallsLayer = map.createStaticLayer('Walls',tileset)
        //set walls up for collisions with player
        wallsLayer.setCollisionByProperty({collides: true})
 
 
-       //Add character
+        //Create main character, edit bounding box, and add character animations
         this.faune = this.physics.add.sprite(128,128,'faune','walk-down-3.png')
         this.faune.body.setSize(this.faune.width/2, this.faune.height * .8)
-        //add animations to character sprite
-        //idles
-        this.anims.create({
-            key:'faune-idle-down',
-            frames: [{ key: 'faune', frame:'walk-down-3.png'}]
-        })
-        this.anims.create({
-            key:'faune-idle-up',
-            frames: [{ key: 'faune', frame:'walk-up-3.png'}]
-        })
-        this.anims.create({
-            key:'faune-idle-side',
-            frames: [{ key: 'faune', frame:'walk-side-3.png'}]
-        })
-        //run-down
-        this.anims.create({
-            key: 'faune-run-down',
-            //generateFrameNames function can use a pattern to guess frame names
-            frames: this.anims.generateFrameNames('faune',{start:1, end:8, prefix:'run-down-', suffix:'.png'}),
-            repeat: -1,
-            frameRate: 15
-        })
-        //run-up
-        this.anims.create({
-            key: 'faune-run-up',
-            //generateFrameNames function can use a pattern to guess frame names
-            frames: this.anims.generateFrameNames('faune',{start:1, end:8, prefix:'run-up-', suffix:'.png'}),
-            repeat: -1,
-            frameRate: 15
-        })
-        //run-side
-        this.anims.create({
-            key: 'faune-run-side',
-            //generateFrameNames function can use a pattern to guess frame names
-            frames: this.anims.generateFrameNames('faune',{start:1, end:8, prefix:'run-side-', suffix:'.png'}),
-            repeat: -1,
-            frameRate: 15
-        })
+        createCharacterAnims(this.anims)
+        
         //set collisions between character and walls
         this.physics.add.collider(this.faune, wallsLayer)
         //have camera follow
@@ -96,7 +51,24 @@ export default class Game extends Phaser.Scene
         //start idle facing screen
         this.faune.anims.play('faune-idle-down')
 
-       //debug draw?
+       //create a group of lizards
+       const lizards = this.physics.add.group({
+           classType:Lizard,
+           //set onCollide to true for each new lizard
+           //this allows our lizards to react to collision events
+           createCallback: (item) => {
+               const LizItem = item
+               LizItem.body.onCollide = true
+           }
+        })
+       createLizardAnims(this.anims)
+       this.physics.add.collider(lizards, wallsLayer)
+       lizards.get(256,128, 'lizard')
+        
+       //const lizard = this.physics.add.sprite(256,128,'lizard','lizard_m_idle_anim_f0.png')
+       //this.physics.add.collider(lizards, wallsLayer)
+       
+    //debug draw test
        //debugDraw(wallsLayer, this)
     }
     //tutorials passes the t: number, dt: number values to this function
