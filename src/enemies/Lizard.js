@@ -1,5 +1,4 @@
 import Phaser from 'phaser'
-import { isThisTypeNode } from 'typescript'
 
 const UP = 0
 const DOWN = 1

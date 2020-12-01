@@ -5,6 +5,8 @@ import { createCharacterAnims } from '../anims/CharacterAnims'
 
 import { debugDraw } from '../utils/debug'
 import Lizard from '../enemies/lizard'
+import Faune from '../characters/Faune'
+
 
 export default class Game extends Phaser.Scene
 {
@@ -38,18 +40,17 @@ export default class Game extends Phaser.Scene
        //set walls up for collisions with player
        wallsLayer.setCollisionByProperty({collides: true})
 
-
-        //Create main character, edit bounding box, and add character animations
-        this.faune = this.physics.add.sprite(128,128,'faune','walk-down-3.png')
-        this.faune.body.setSize(this.faune.width/2, this.faune.height * .8)
+        //must create anims before character
         createCharacterAnims(this.anims)
+        //Create main character, edit bounding box, and add character animations
+        this.faune = this.add.faune(128,128,'faune')
         
         //set collisions between character and walls
         this.physics.add.collider(this.faune, wallsLayer)
         //have camera follow
         this.cameras.main.startFollow(this.faune,true)
         //start idle facing screen
-        this.faune.anims.play('faune-idle-down')
+        //this.faune.anims.play('faune-idle-down')
 
        //create a group of lizards
        const lizards = this.physics.add.group({
@@ -64,57 +65,35 @@ export default class Game extends Phaser.Scene
        createLizardAnims(this.anims)
        this.physics.add.collider(lizards, wallsLayer)
        lizards.get(256,128, 'lizard')
+       lizards.get(106,228, 'lizard')
         
-       //const lizard = this.physics.add.sprite(256,128,'lizard','lizard_m_idle_anim_f0.png')
-       //this.physics.add.collider(lizards, wallsLayer)
-       
-    //debug draw test
+       //add a collider between lizard and character
+       //handlePlayerLizardCollision on collision, nothing on process, context = this sprite
+       //(since there are multiple lizard sprites, we only want to trigger a reaction with the 1 that collided)
+       this.physics.add.collider(lizards, this.faune, this.handlePlayerLizardCollision, undefined, this)
+
+        //debug draw test
        //debugDraw(wallsLayer, this)
     }
+
+    handlePlayerLizardCollision(obj1, obj2){
+        const lizard = obj2
+
+        const dx = this.faune.x - lizard.x
+        const dy = this.faune.y - lizard.y
+
+        const dir = new Phaser.Math.Vector2(dx,dy).normalize().scale(200)
+        this.faune.handleDamage(dir)
+        
+    }
+
     //tutorials passes the t: number, dt: number values to this function
     //these are default phaser args
     update()
     {
-        //if cursors and character aren't loaded, stop
-        if (!this.cursors || !this.faune){
-            return
+        if (this.faune){
+            //pass cursor keys to character
+            this.faune.update(this.cursors)
         }
-
-        //player movement with arrow keys
-        const speed = 100
-        if (this.cursors.left.isDown){
-            this.faune.setVelocity(-speed, 0)
-            this.faune.anims.play('faune-run-side',true)
-            this.faune.scaleX  = -1
-            //not the same as this.faune.setOffset which did not habe desired effects,was buggy
-            this.faune.body.offset.x = 24
-        }
-        else if(this.cursors.right.isDown){
-            this.faune.setVelocity(speed,0)
-            this.faune.anims.play('faune-run-side',true)
-            this.faune.scaleX  = 1
-            this.faune.body.offset.x = 8
-        }
-        else if(this.cursors.down.isDown){
-            this.faune.setVelocity(0,speed)
-            this.faune.anims.play('faune-run-down',true)
-        }
-        else if(this.cursors.up.isDown){
-            this.faune.setVelocity(0,-speed)
-            this.faune.anims.play('faune-run-up',true)
-        } 
-        else {
-            //if no cursor, stop movement and idle
-            
-            //get the current animation key
-            const parts = this.faune.anims.currentAnim.key.split('-')
-            //parts now has faune, run, direction
-            //so overwrite the run with idle and rejoin to get the correct key
-            parts[1] = 'idle'
-            this.faune.setVelocity(0,0)
-            this.faune.anims.play(parts.join('-'))
-        }
-
-        //more?
     }
 }
