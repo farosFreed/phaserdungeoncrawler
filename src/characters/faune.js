@@ -10,6 +10,7 @@ export default class Faune extends Phaser.Physics.Arcade.Sprite
     #damageTime = 0 //currently not damaged
 
     #_health = 3 //initial health which will be kept private
+    #knives = undefined
 
     get health(){
         return this.#_health //getter for health
@@ -22,11 +23,61 @@ export default class Faune extends Phaser.Physics.Arcade.Sprite
         this.anims.play('faune-idle-down')
     }
 
+    //make weapons in scene group
+    setKnives(knives){
+        this.#knives = knives
+    }
+
+    //throw knives / use weapon
+    throwKnife(){
+
+        //if no knives, do nothing
+        if (!this.#knives){
+            return
+        }
+        
+        const parts = this.anims.currentAnim.key.split('-')
+        const direction = parts[2]
+
+        const vec = new Phaser.Math.Vector2(0,0) //make a vector object
+
+        switch (direction){
+            case 'up':
+                vec.y = -1 //set vector direction up
+                break
+            case 'down':
+                vec.y = 1 //set vector direction down
+                break
+            case 'side':
+                if (this.scaleX < 0){ //scaleX is 1 when facing right, -1 when left
+                    vec.x = -1 //set vector direction left
+                } else {
+                    vec.x = 1 //set vector direction right
+                }
+                break
+        }
+
+        const angle = vec.angle() //gives us the vector angle in radians
+        //because we are inside the character object we can spawn the knife at the character with this.x, this.y
+        const knife = this.#knives.get(this.x, this.y, 'knife',)
+
+        knife.setActive(true) //setActive so we can killAndHide later
+        knife.setVisible(true)
+
+        knife.setRotation(angle)
+
+        knife.x += vec.x * 16
+        knife.y += vec.y * 16
+
+        knife.setVelocity(vec.x * 300, vec.y * 300)
+        
+    }
+
     //handle damage events
     handleDamage(dir){
 
         //if I'm already being damaged or already dead dont keep murdering me
-        if (this.#_health <= 0 || this.#currentState === HealthState[1]){
+        if (this.#_health <= 0 || this.#currentState == HealthState[1]){
             return
         }
 
@@ -81,6 +132,14 @@ export default class Faune extends Phaser.Physics.Arcade.Sprite
         }
         //if cursors and character aren't loaded, stop
         if (!cursors){
+            return
+        }
+
+        //if sppacebar, throw knives
+        if (Phaser.Input.Keyboard.JustDown(cursors.space)){
+        //if (cursors.space){
+            this.throwKnife()
+            //wont move, will throw knife instead
             return
         }
 

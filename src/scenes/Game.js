@@ -17,6 +17,8 @@ export default class Game extends Phaser.Scene
         super('game')
         this.cursors = undefined
         this.faune = undefined
+        this.knives = undefined
+        this.lizards = undefined
         //store a reference to the player-lzard collider so we can destroy it elsewhere when player dies
         this.playerLizardCollider = undefined
 
@@ -52,18 +54,32 @@ export default class Game extends Phaser.Scene
        const wallsLayer = map.createStaticLayer('Walls',tileset)
        //set walls up for collisions with player
        wallsLayer.setCollisionByProperty({collides: true})
+
+       //create a set of weapons for character
+       this.knives = this.physics.add.group()
+       /*knives.createMultiple({
+        key:'knife',
+        setXY: {
+            x:10,
+            y:10,
+            stepX: 16
+        },
+        quantity: 3
+    })*/
+
+
         //Create main character, edit bounding box, and add character animations
         this.faune = this.add.faune(128,128,'faune')
+        this.faune.setKnives(this.knives)
         
         //set collisions between character and walls
         this.physics.add.collider(this.faune, wallsLayer)
         //have camera follow
         this.cameras.main.startFollow(this.faune,true)
-        //start idle facing screen
-        //this.faune.anims.play('faune-idle-down')
+        
 
        //create a group of lizards
-       const lizards = this.physics.add.group({
+       this.lizards = this.physics.add.group({
            classType:Lizard,
            //set onCollide to true for each new lizard
            //this allows our lizards to react to collision events
@@ -72,17 +88,32 @@ export default class Game extends Phaser.Scene
                LizItem.body.onCollide = true
            }
         })
-       this.physics.add.collider(lizards, wallsLayer)
-       lizards.get(256,128, 'lizard')
-       lizards.get(106,228, 'lizard')
-        
+       this.physics.add.collider(this.lizards, wallsLayer)
+       this.lizards.get(256,128, 'lizard')
+       this.lizards.get(106,228, 'lizard')
+
        //add a collider between lizard and character
        //handlePlayerLizardCollision on collision, nothing on process, context = this sprite
        //(since there are multiple lizard sprites, we only want to trigger a reaction with the 1 that collided)
-       this.playerLizardCollider = this.physics.add.collider(lizards, this.faune, this.handlePlayerLizardCollision, undefined, this)
+       this.playerLizardCollider = this.physics.add.collider(this.lizards, this.faune, this.handlePlayerLizardCollision, undefined, this)
+
+        //add similar colliders between weapon and walls, lizards
+       this.physics.add.collider(this.knives, wallsLayer, this.handleKnifeWallCollsion, undefined, this)
+       this.physics.add.collider(this.knives, this.lizards, this.handleKnifeLizardCollision, undefined, this)
 
         //debug draw test
        //debugDraw(wallsLayer, this)
+    }
+
+    handleKnifeWallCollsion(obj1, obj2){
+        this.knives.killAndHide(obj1) //when knife hits wall, kill and hide it
+    }
+
+    handleKnifeLizardCollision(obj1,obj2){
+        //log object 1 params so we can see which is which
+        //console.dir(obj1)
+        this.knives.killAndHide(obj1)
+        this.lizards.killAndHide(obj2) 
     }
 
     handlePlayerLizardCollision(obj1, obj2){
