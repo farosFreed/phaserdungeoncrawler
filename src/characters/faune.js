@@ -1,7 +1,7 @@
 import Phaser from 'phaser'
-import { isThrowStatement } from 'typescript'
 import Chest from '../items/Chest'
 
+import { sceneEvents } from '../events/eventCenter'
 
 //character states
 const HealthState = ['IDLE','DAMAGE','DEAD']
@@ -32,7 +32,6 @@ export default class Faune extends Phaser.Physics.Arcade.Sprite
     //set chest to open
     setChest(chest){
         this.#activeChest = chest
-        console.dir(this.#activeChest)
     }
     //make weapons in scene group
     setKnives(knives){
@@ -45,6 +44,13 @@ export default class Faune extends Phaser.Physics.Arcade.Sprite
         //if no knives, do nothing
         if (!this.#knives){
             return
+        }
+
+        //get knife from this.#knives
+        const knife = this.#knives.get(this.x, this.y, 'knife')
+        //if out of knives, stop and do nothing
+        if (!knife){
+            return 
         }
         
         const parts = this.anims.currentAnim.key.split('-')
@@ -69,9 +75,6 @@ export default class Faune extends Phaser.Physics.Arcade.Sprite
         }
 
         const angle = vec.angle() //gives us the vector angle in radians
-        //because we are inside the character object we can spawn the knife at the character with this.x, this.y
-        const knife = this.#knives.get(this.x, this.y, 'knife',)
-
         knife.setActive(true) //setActive so we can killAndHide later
         knife.setVisible(true)
 
@@ -152,7 +155,8 @@ export default class Faune extends Phaser.Physics.Arcade.Sprite
             if (this.#activeChest){
                 const coins = this.#activeChest.open() //open it
                 this.#_coins += coins
-                console.log(coins)
+                //emit player-coins-changed event and send coins value
+                sceneEvents.emit('player-coins-changed', this.#_coins)
             //otherwise 
             } else {
                 this.throwKnife() //throw knife

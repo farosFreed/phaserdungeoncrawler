@@ -12,6 +12,15 @@ export default class GameUI extends Phaser.Scene
     create()
     {
         //super('game-ui')
+
+        //coins ui
+        this.add.image(6, 26, 'treasure', 'coin_anim_f0.png')
+        const coinsLabel = this.add.text(12,20,'0')
+        sceneEvents.on('player-coins-changed', (coins) => {
+            coinsLabel.text = coins.toLocaleString()
+        })
+
+        //heart ui
         this.hearts = this.add.group()
 
         this.hearts.createMultiple({
@@ -25,9 +34,10 @@ export default class GameUI extends Phaser.Scene
         })
 
         sceneEvents.on('player-health-changed', this.handlePlayerHealthChanged, this)
-        //cleanup event listener
+        //cleanup event listeners
         this.events.on(Phaser.Scenes.Events.SHUTDOWN, () => {
             sceneEvents.off('player-health-changed', this.handlePlayerHealthChanged, this)
+            sceneEvents.off('player-coins-changed', undefined, this)
         })
     }
 

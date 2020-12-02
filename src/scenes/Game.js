@@ -69,17 +69,9 @@ export default class Game extends Phaser.Scene
        })
 
        //create a set of weapons for character
-       this.knives = this.physics.add.group()
-       /*knives.createMultiple({
-        key:'knife',
-        setXY: {
-            x:10,
-            y:10,
-            stepX: 16
-        },
-        quantity: 3
-    })*/
-
+       this.knives = this.physics.add.group({
+           maxSize:3
+       })
 
         //Create main character, edit bounding box, and add character animations
         this.faune = this.add.faune(128,128,'faune')
@@ -93,17 +85,24 @@ export default class Game extends Phaser.Scene
 
        //create a group of lizards
        this.lizards = this.physics.add.group({
-           classType:Lizard,
-           //set onCollide to true for each new lizard
-           //this allows our lizards to react to collision events
-           createCallback: (item) => {
-               const LizItem = item
-               LizItem.body.onCollide = true
-           }
-        })
+        classType:Lizard,
+        //set onCollide to true for each new lizard
+        //this allows our lizards to react to collision events
+        createCallback: (item) => {
+            const LizItem = item
+            LizItem.body.onCollide = true
+        }
+    }) 
+    
+    const lizardsLayer = map.getObjectLayer('Lizards')
+    lizardsLayer.objects.forEach(lizardObj => {
+         this.lizards.get(lizardObj.x + lizardObj.width * .5,lizardObj.y - lizardObj.height * .5,'lizard')
+    })
+
        this.physics.add.collider(this.lizards, wallsLayer)
-       this.lizards.get(256,128, 'lizard')
-       this.lizards.get(106,228, 'lizard')
+
+       //this.lizards.get(256,128, 'lizard')
+       //this.lizards.get(106,228, 'lizard')
 
        //add a collider between lizard and character
        //handlePlayerLizardCollision on collision, nothing on process, context = this sprite
@@ -127,14 +126,18 @@ export default class Game extends Phaser.Scene
 
     handleKnifeWallCollsion(obj1, obj2){
         this.knives.killAndHide(obj1) //when knife hits wall, kill and hide it
+        this.knives.remove(obj1)//remove the physics body to prevent bugs
     }
 
     handleKnifeLizardCollision(obj1,obj2){
         //log object params so we can see which is which
         //console.dir(obj1)
         //console.dir(obj2)
+
         this.knives.killAndHide(obj1)
-        this.lizards.killAndHide(obj2) 
+        this.knives.remove(obj1) //remove the physics body to prevent bugs
+        this.lizards.killAndHide(obj2)
+        this.lizards.remove(obj2) //remove the physics body to prevent bugs
     }
 
     handlePlayerLizardCollision(obj1, obj2){
