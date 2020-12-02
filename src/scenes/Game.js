@@ -7,6 +7,8 @@ import { debugDraw } from '../utils/debug'
 import Lizard from '../enemies/lizard'
 import Faune from '../characters/Faune'
 
+import { sceneEvents } from '../events/eventCenter'
+
 
 export default class Game extends Phaser.Scene
 {
@@ -15,6 +17,8 @@ export default class Game extends Phaser.Scene
         super('game')
         this.cursors = undefined
         this.faune = undefined
+        //store a reference to the player-lzard collider so we can destroy it elsewhere when player dies
+        this.playerLizardCollider = undefined
 
 	}
 
@@ -26,6 +30,15 @@ export default class Game extends Phaser.Scene
 
     create()
     {
+        //set enemy and character anims early to avoid errors
+        createLizardAnims(this.anims)
+        createCharacterAnims(this.anims)
+
+        //show gameUI in this scene instead of after
+        //could also use this.scene.get but then scenes are more blended
+        this.scene.run('game-ui')
+        //we will use events to pass info between scenes instead
+
        const map = this.make.tilemap({key: 'dungeon'})
        //the first value in addTilesetImage must match the name of the tileset in the Tiled UI. 
        //its displayed in the right menu above the tile selection
@@ -39,9 +52,6 @@ export default class Game extends Phaser.Scene
        const wallsLayer = map.createStaticLayer('Walls',tileset)
        //set walls up for collisions with player
        wallsLayer.setCollisionByProperty({collides: true})
-
-        //must create anims before character
-        createCharacterAnims(this.anims)
         //Create main character, edit bounding box, and add character animations
         this.faune = this.add.faune(128,128,'faune')
         
@@ -62,7 +72,6 @@ export default class Game extends Phaser.Scene
                LizItem.body.onCollide = true
            }
         })
-       createLizardAnims(this.anims)
        this.physics.add.collider(lizards, wallsLayer)
        lizards.get(256,128, 'lizard')
        lizards.get(106,228, 'lizard')
@@ -70,7 +79,7 @@ export default class Game extends Phaser.Scene
        //add a collider between lizard and character
        //handlePlayerLizardCollision on collision, nothing on process, context = this sprite
        //(since there are multiple lizard sprites, we only want to trigger a reaction with the 1 that collided)
-       this.physics.add.collider(lizards, this.faune, this.handlePlayerLizardCollision, undefined, this)
+       this.playerLizardCollider = this.physics.add.collider(lizards, this.faune, this.handlePlayerLizardCollision, undefined, this)
 
         //debug draw test
        //debugDraw(wallsLayer, this)
@@ -84,7 +93,17 @@ export default class Game extends Phaser.Scene
 
         const dir = new Phaser.Math.Vector2(dx,dy).normalize().scale(200)
         this.faune.handleDamage(dir)
-        
+
+        //TODO : best practice is have seperate full with all event names as a const
+        //so they dont get lost! (such as player-health-changed)
+
+        //emit event and get player health
+        sceneEvents.emit('player-health-changed', this.faune.health)
+
+        //if player dies, destroy the player-lizard colliders
+        if (this.faune.health <= 0){
+            this.playerLizardCollider.destroy()
+        }
     }
 
     //tutorials passes the t: number, dt: number values to this function

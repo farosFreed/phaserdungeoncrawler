@@ -1,4 +1,4 @@
-import Phaser from 'phaser'
+import Phaser, { Animations } from 'phaser'
 
 const createCharacterAnims = (anims) => {
     //add animations to main character sprite
@@ -26,17 +26,21 @@ const createCharacterAnims = (anims) => {
     //run-up
     anims.create({
         key: 'faune-run-up',
-        //generateFrameNames function can use a pattern to guess frame names
-            frames: anims.generateFrameNames('faune',{start:1, end:8, prefix:'run-up-', suffix:'.png'}),
-            repeat: -1,
-            frameRate: 15
+        frames: anims.generateFrameNames('faune',{start:1, end:8, prefix:'run-up-', suffix:'.png'}),
+        repeat: -1,
+        frameRate: 15
         })
     //run-side
     anims.create({
         key: 'faune-run-side',
-        //generateFrameNames function can use a pattern to guess frame names
         frames: anims.generateFrameNames('faune',{start:1, end:8, prefix:'run-side-', suffix:'.png'}),
         repeat: -1,
+        frameRate: 15
+    })
+    //faint
+    anims.create({
+        key: 'faune-faint',
+        frames: anims.generateFrameNames('faune',{start:1, end:4, prefix:'faint-', suffix:'.png'}),
         frameRate: 15
     })
 }

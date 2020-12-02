@@ -2,11 +2,18 @@ import Phaser from 'phaser'
 //import { isThisTypeNode } from 'typescript';
 
 //character states
-const HealthState = ['IDLE','DAMAGE']
+const HealthState = ['IDLE','DAMAGE','DEAD']
 
-export default class Faune extends Phaser.Physics.Arcade.Sprite{
+export default class Faune extends Phaser.Physics.Arcade.Sprite
+{
     #currentState = HealthState[0] //set currentState to 'IDLE'
     #damageTime = 0 //currently not damaged
+
+    #_health = 3 //initial health which will be kept private
+
+    get health(){
+        return this.#_health //getter for health
+    }
 
     constructor(scene,x,y,texture,frame){
         super(scene,x,y,texture,frame)
@@ -17,15 +24,30 @@ export default class Faune extends Phaser.Physics.Arcade.Sprite{
 
     //handle damage events
     handleDamage(dir){
-        //if I'm already being damaged dont stack
-        if (this.#currentState === HealthState[1]){
+
+        //if I'm already being damaged or already dead dont keep murdering me
+        if (this.#_health <= 0 || this.#currentState === HealthState[1]){
             return
         }
-        //otherwise, damage!
-        this.setVelocity(dir.x,dir.y)
-        this.setTint(0xff0000)
-        this.#currentState = HealthState[1] //set currentState to 'DAMAGE'
-        this.#damageTime = 0 //reset damage timer
+
+        //otherwise, damage animations!
+        
+        //lose 1 heart
+        --this.#_health
+
+        //if this sets health to 0
+        if (this.#_health <= 0){
+            //die
+            this.#currentState = HealthState[2] //set currentState to 'DEAD'
+            this.anims.play('faune-faint')
+            this.setVelocity(0,0)
+
+        } else { //else show damage, knockback
+            this.setVelocity(dir.x,dir.y)
+            this.setTint(0xff0000)
+            this.#currentState = HealthState[1] //set currentState to 'DAMAGE'
+            this.#damageTime = 0 //reset damage timer
+        }
     }
 
     preUpdate(t,dt){
@@ -53,8 +75,8 @@ export default class Faune extends Phaser.Physics.Arcade.Sprite{
         //let super do its things
         super.update(cursors)
 
-        //if damaged, no moving
-        if (this.#currentState === HealthState[1]){
+        //if damaged or dead, no moving
+        if (this.#currentState === HealthState[1] || this.#currentState === HealthState[2]){
             return
         }
         //if cursors and character aren't loaded, stop

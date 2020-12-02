@@ -3,6 +3,7 @@ import Phaser from 'phaser'
 //scenes
 import Preloader from './scenes/Preloader'
 import Game from './scenes/Game'
+import GameUI from './scenes/GameUI'
 
 const config = {
 	type: Phaser.AUTO,
@@ -15,7 +16,7 @@ const config = {
 			debug: true
 		}
 	},
-	scene: [Preloader, Game],
+	scene: [Preloader, Game, GameUI],
 	scale: {
 		zoom:2
 	}
