@@ -1,5 +1,7 @@
 import Phaser from 'phaser'
-//import { isThisTypeNode } from 'typescript';
+import { isThrowStatement } from 'typescript'
+import Chest from '../items/Chest'
+
 
 //character states
 const HealthState = ['IDLE','DAMAGE','DEAD']
@@ -10,7 +12,10 @@ export default class Faune extends Phaser.Physics.Arcade.Sprite
     #damageTime = 0 //currently not damaged
 
     #_health = 3 //initial health which will be kept private
+    #_coins = 0 //inital coins, also private
+
     #knives = undefined
+    #activeChest = undefined
 
     get health(){
         return this.#_health //getter for health
@@ -21,8 +26,14 @@ export default class Faune extends Phaser.Physics.Arcade.Sprite
 
         //start idle facing screen
         this.anims.play('faune-idle-down')
-    }
 
+
+    }
+    //set chest to open
+    setChest(chest){
+        this.#activeChest = chest
+        console.dir(this.#activeChest)
+    }
     //make weapons in scene group
     setKnives(knives){
         this.#knives = knives
@@ -135,36 +146,54 @@ export default class Faune extends Phaser.Physics.Arcade.Sprite
             return
         }
 
-        //if sppacebar, throw knives
+        //if spacebar
         if (Phaser.Input.Keyboard.JustDown(cursors.space)){
-        //if (cursors.space){
-            this.throwKnife()
-            //wont move, will throw knife instead
+            //and if active chest
+            if (this.#activeChest){
+                const coins = this.#activeChest.open() //open it
+                this.#_coins += coins
+                console.log(coins)
+            //otherwise 
+            } else {
+                this.throwKnife() //throw knife
+            }
             return
         }
 
         //player movement with arrow keys
         const speed = 100
+
+        //const leftDown = 
+        //const rightDown = 
+        //const upDown = 
+        //const downDown = 
+        
         if (cursors.left.isDown){
             this.setVelocity(-speed, 0)
             this.anims.play('faune-run-side',true)
             this.scaleX  = -1
-            //not the same as this.faune.setOffset which did not habe desired effects,was buggy
+            //not the same as this.faune.setOffset which did not have desired effects,was buggy
             this.body.offset.x = 24
+
+            this.#activeChest = undefined //remove activeChests
         }
         else if(cursors.right.isDown){
             this.setVelocity(speed,0)
             this.anims.play('faune-run-side',true)
             this.scaleX  = 1
             this.body.offset.x = 8
+
+            this.#activeChest = undefined //remove activeChests
         }
         else if(cursors.down.isDown){
             this.setVelocity(0,speed)
             this.anims.play('faune-run-down',true)
+            this.#activeChest = undefined //remove activeChests
         }
         else if(cursors.up.isDown){
             this.setVelocity(0,-speed)
             this.anims.play('faune-run-up',true)
+            this.#activeChest = undefined //remove activeChests
         } 
         else {
             //if no cursor, stop movement and idle

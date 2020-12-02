@@ -2,10 +2,13 @@ import Phaser from 'phaser'
 
 import { createLizardAnims } from '../anims/EnemyAnims'
 import { createCharacterAnims } from '../anims/CharacterAnims'
+import { createChestAnims } from '../anims/TreasureAnims'
 
 import { debugDraw } from '../utils/debug'
+
 import Lizard from '../enemies/lizard'
 import Faune from '../characters/Faune'
+import Chest from '../items/Chest'
 
 import { sceneEvents } from '../events/eventCenter'
 
@@ -32,9 +35,10 @@ export default class Game extends Phaser.Scene
 
     create()
     {
-        //set enemy and character anims early to avoid errors
+        //set anims early to avoid errors
         createLizardAnims(this.anims)
         createCharacterAnims(this.anims)
+        createChestAnims(this.anims)
 
         //show gameUI in this scene instead of after
         //could also use this.scene.get but then scenes are more blended
@@ -54,6 +58,15 @@ export default class Game extends Phaser.Scene
        const wallsLayer = map.createStaticLayer('Walls',tileset)
        //set walls up for collisions with player
        wallsLayer.setCollisionByProperty({collides: true})
+
+       //create & position chests using Tilemap layer
+       const chests = this.physics.add.staticGroup({
+           classType:Chest
+       }) //prevent chests from moving
+       const chestsLayer = map.getObjectLayer('Chests')
+       chestsLayer.objects.forEach(chestObj => {
+            chests.get(chestObj.x + chestObj.width * .5, chestObj.y - chestObj.height * .5, 'treasure')
+       })
 
        //create a set of weapons for character
        this.knives = this.physics.add.group()
@@ -100,9 +113,16 @@ export default class Game extends Phaser.Scene
         //add similar colliders between weapon and walls, lizards
        this.physics.add.collider(this.knives, wallsLayer, this.handleKnifeWallCollsion, undefined, this)
        this.physics.add.collider(this.knives, this.lizards, this.handleKnifeLizardCollision, undefined, this)
+        //collide with chests
+        this.physics.add.collider(this.faune, chests, this.handlePlayerChestCollision, undefined, this)
 
         //debug draw test
        //debugDraw(wallsLayer, this)
+    }
+
+    handlePlayerChestCollision(obj1, obj2){
+        const chest  = obj2
+        this.faune.setChest(chest)
     }
 
     handleKnifeWallCollsion(obj1, obj2){
@@ -110,8 +130,9 @@ export default class Game extends Phaser.Scene
     }
 
     handleKnifeLizardCollision(obj1,obj2){
-        //log object 1 params so we can see which is which
+        //log object params so we can see which is which
         //console.dir(obj1)
+        //console.dir(obj2)
         this.knives.killAndHide(obj1)
         this.lizards.killAndHide(obj2) 
     }
