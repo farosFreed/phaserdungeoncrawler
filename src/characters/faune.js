@@ -166,11 +166,6 @@ export default class Faune extends Phaser.Physics.Arcade.Sprite
 
         //player movement with arrow keys
         const speed = 100
-
-        //const leftDown = 
-        //const rightDown = 
-        //const upDown = 
-        //const downDown = 
         
         if (cursors.left.isDown){
             this.setVelocity(-speed, 0)
